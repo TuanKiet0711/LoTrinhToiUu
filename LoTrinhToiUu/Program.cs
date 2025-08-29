@@ -18,6 +18,7 @@ app.UseRouting();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Map}/{action=Index}/{id?}");
+    pattern: "{controller=Attractions}/{action=Index}/{id?}");
+
 
 app.Run();

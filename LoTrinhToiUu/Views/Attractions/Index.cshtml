@@ -1,0 +1,103 @@
+﻿@model IEnumerable<CityTourApp.Models.Attraction>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #map {
+        height: 78vh;
+        border-radius: 12px
+    }
+
+    .panel {
+        margin: 10px 0;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap
+    }
+</style>
+
+<h2>Lộ trình xe du lịch đến danh thắng</h2>
+<div class="panel">
+    <button id="btnUseMyLoc">Dùng vị trí hiện tại làm điểm xuất phát</button>
+    <button id="btnClear">Xoá tuyến</button>
+    <button id="btnRoute"><b>Tính đường (xe du lịch)</b></button>
+</div>
+<div id="map"></div>
+<div id="steps"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    const map = L.map('map').setView([10.7769, 106.7008], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+    // Lưu ý: System.Text.Json đang serialize PascalCase -> dùng p.Ten, p.Lat, p.Lng, p.DiaChi
+    const data = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model));
+    const markers = [];
+    let routeLayer = null;
+    const coords = []; // [[lng,lat],...]
+    let origin = null; // [lng,lat]
+
+    // Vẽ marker và popup "Thêm điểm này"
+    data.forEach(p => {
+        const lat = Number(p.Lat);
+        const lng = Number(p.Lng);
+        const name = p.Ten;
+        const addr = p.DiaChi ?? "";
+
+        const m = L.marker([lat, lng]).addTo(map)
+            .bindPopup(`<b>${name}</b><br/>${addr}<br/>
+            <button onclick="addStop(${lng},${lat},'${(name || '').replace(/'/g, "\\'")}')">Thêm điểm này</button>`);
+        markers.push(m);
+    });
+
+    window.addStop = (lng, lat, name) => {
+        coords.push([lng, lat]);           // ORS yêu cầu [lng,lat]
+        alert(`Đã thêm: ${name}`);
+    };
+
+    document.getElementById('btnUseMyLoc').onclick = () => {
+        if (!navigator.geolocation) return alert("Trình duyệt không hỗ trợ định vị.");
+        navigator.geolocation.getCurrentPosition(pos => {
+            const { latitude, longitude } = pos.coords;
+            origin = [longitude, latitude];
+            L.marker([latitude, longitude]).addTo(map).bindPopup("Xuất phát").openPopup();
+            map.setView([latitude, longitude], 15);
+        }, () => alert("Không lấy được vị trí."));
+    };
+
+    document.getElementById('btnClear').onclick = () => {
+        if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
+        coords.length = 0; origin = null;
+        document.getElementById('steps').innerHTML = "";
+    };
+
+    document.getElementById('btnRoute').onclick = async () => {
+        const points = [];
+        if (origin) points.push(origin);
+        if (coords.length === 0) return alert("Hãy chọn ít nhất 1 điểm tham quan.");
+        coords.forEach(c => points.push(c));
+
+        const res = await fetch('/api/coach-route', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                coords: points,
+                vehicle: { weightTons: 15, height: 3.5, width: 2.5, length: 12 }
+            })
+        });
+
+        if (!res.ok) { alert("Không tính được tuyến."); return; }
+        const json = await res.json();
+        const feat = json?.features?.[0];
+        if (!feat) { alert("Không có kết quả."); return; }
+
+        if (routeLayer) map.removeLayer(routeLayer);
+        routeLayer = L.geoJSON(feat.geometry).addTo(map);
+        map.fitBounds(routeLayer.getBounds());
+
+        const steps = (feat.properties?.segments?.[0]?.steps ?? []);
+        let html = "<h3>Hướng dẫn</h3><ol>";
+        steps.forEach(s => html += `<li>${s.instruction} (${Math.round(s.distance)} m, ~${Math.round(s.duration / 60)} phút)</li>`);
+        html += "</ol>";
+        document.getElementById('steps').innerHTML = html;
+    };
+</script>
