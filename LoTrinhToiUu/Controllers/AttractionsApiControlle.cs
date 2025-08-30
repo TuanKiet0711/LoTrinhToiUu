@@ -5,7 +5,7 @@ using System.Linq;
 namespace LoTrinhToiUu.Controllers
 {
     [ApiController] // Đánh dấu đây là API Controller
-    [Route("api/[controller]")] // Endpoint: /api/attractionsapi
+    [Route("api/attractions")]   // Endpoint: /api/attractionsapi
     public class AttractionsApiController : ControllerBase
     {
         private readonly CityTourContext _db;

@@ -1,46 +1,156 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+﻿@{
+    var title = ViewData["Title"] as string ?? "LoTrinhToiUu";
+    var fullBleed = (ViewData["FullBleed"] as bool?) ?? false;
+}
+<!DOCTYPE html>
+<html lang="vi">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - LoTrinhToiUu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@title - LoTrinhToiUu</title>
+
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/LoTrinhToiUu.styles.css" asp-append-version="true" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+
+    <style>
+        :root {
+            --bg1: #f0f9ff;
+            --bg2: #ffffff;
+            --card: #ffffff;
+            --ink: #0f172a;
+            --muted: #64748b;
+            --accent: #0ea5e9;
+            --ring: rgba(14,165,233,.35);
+            --headerH: 64px;
+            --footerH: 64px; /* 👈 chiều cao footer */
+        }
+
+        html, body {
+            height: 100%
+        }
+
+        body {
+            font-family: "Poppins",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+            color: var(--ink);
+            background: linear-gradient(180deg,var(--bg1) 0%, var(--bg2) 45%);
+            /* 👇 chừa chỗ cho footer fixed để không che nội dung */
+            padding-bottom: var(--footerH);
+        }
+
+        /* Header glass */
+        .navbar-glass {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            background: rgba(255,255,255,.75) !important;
+            box-shadow: 0 6px 24px rgba(2,6,23,.08);
+            border-bottom: 1px solid rgba(2,6,23,.06);
+        }
+
+        .brand-logo {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            background: linear-gradient(135deg,var(--accent),#22d3ee);
+            display: grid;
+            place-items: center;
+            color: #fff;
+            font-weight: 700;
+            margin-right: .5rem;
+            box-shadow: 0 6px 18px rgba(14,165,233,.35);
+        }
+
+        .navbar-nav .nav-link {
+            font-weight: 600
+        }
+
+        .container-app {
+            max-width: 1200px
+        }
+
+        /* Full-bleed chỉ cần trừ header (footer đã fixed và body có padding-bottom) */
+        .full-bleed-wrapper {
+            min-height: calc(100dvh - var(--headerH));
+            padding: 0;
+        }
+
+        .full-bleed-main {
+            padding: 0 0 16px 0;
+        }
+
+        /* Footer fixed */
+        footer.footer {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: var(--footerH);
+            background: #fff;
+            border-top: 1px solid rgba(2,6,23,.06);
+            display: flex;
+            align-items: center; /* căn giữa theo chiều dọc */
+            z-index: 10;
+        }
+
+        .btn-app {
+            font-weight: 600;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(14,165,233,.15);
+        }
+
+            .btn-app:focus {
+                box-shadow: 0 0 0 .25rem var(--ring)
+            }
+    </style>
+
+    @RenderSection("Head", required: false)
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">LoTrinhToiUu</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+    <header class="sticky-top">
+        <nav class="navbar navbar-expand-lg navbar-light navbar-glass" style="height:var(--headerH)">
+            <div class="container container-app">
+                <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
+                    <span class="brand-logo">🗺️</span>
+                    <span class="fw-bold">LoTrinhToiUu</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNav"
+                        aria-controls="topNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
+
+                <div id="topNav" class="collapse navbar-collapse">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
+                        <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Bản đồ</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Attractions" asp-action="Index">Danh thắng</a></li>
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - LoTrinhToiUu - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    @if (fullBleed)
+    {
+        <div class="full-bleed-wrapper">
+            <main role="main" class="full-bleed-main">
+                @RenderBody()
+            </main>
         </div>
-    </footer>
+    }
+    else
+    {
+        <div class="container container-app my-4">
+            <main role="main" class="pb-3">
+                @RenderBody()
+            </main>
+        </div>
+    }
+
+    
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

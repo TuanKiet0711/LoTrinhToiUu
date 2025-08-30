@@ -1,201 +1,289 @@
 ﻿@model IEnumerable<CityTourApp.Models.Attraction>
+@{
+    ViewData["Title"] = "Bản đồ";
+    ViewData["FullBleed"] = true; // dùng layout full screen
+}
 @using System.Text.Json
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+@section Head {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+}
+
 <style>
-    #map {
-        height: 78vh;
-        border-radius: 12px
+    :root {
+        --accent: #0ea5e9;
+        --accent2: #22d3ee;
+        --ink: #0f172a;
+        --muted: #64748b;
+        --ring: rgba(14,165,233,.35);
     }
 
-    .panel {
-        margin: 10px 0;
+    * {
+        box-sizing: border-box
+    }
+
+    html, body {
+        height: 100%
+    }
+
+    .page {
+        max-width: 1200px;
+        margin: 14px auto;
+        padding: 0 16px 24px;
+    }
+
+    .hero {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px
+    }
+
+    .logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: linear-gradient(135deg,var(--accent),var(--accent2));
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-weight: 800;
+        box-shadow: 0 6px 18px rgba(14,165,233,.35)
+    }
+
+    .subtitle {
+        color: var(--muted);
+        margin-top: 2px
+    }
+
+    .map-wrap {
+        position: relative;
+        width: 100%;
+        height: 60dvh;
+        margin-bottom: 14px
+    }
+
+    #map {
+        position: absolute;
+        inset: 0;
+        border-radius: 14px;
+        outline: 1px solid rgba(2,6,23,.06)
+    }
+
+    .controls {
+        position: absolute;
+        left: 12px;
+        top: 12px;
+        z-index: 500;
         display: flex;
         gap: 8px;
         flex-wrap: wrap
     }
+
+    .btn {
+        appearance: none;
+        border: 0;
+        cursor: pointer;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-weight: 700;
+        background: #fff;
+        color: #0c4a6e;
+        box-shadow: 0 8px 24px rgba(2,6,23,.10), 0 0 0 1px rgba(2,6,23,.06) inset;
+        transition: .2s transform,.2s box-shadow
+    }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 28px rgba(2,6,23,.16), 0 0 0 1px rgba(2,6,23,.06) inset
+        }
+
+        .btn:focus {
+            outline: 3px solid var(--ring)
+        }
+
+    .btn-primary {
+        background: linear-gradient(135deg,var(--accent),var(--accent2));
+        color: #fff
+    }
+
+    .btn-danger {
+        background: #fee2e2;
+        color: #7f1d1d
+    }
+
+    .btn-pill {
+        border-radius: 999px
+    }
+
+    .card {
+        background: #fff;
+        border-radius: 14px;
+        padding: 12px;
+        border: 1px solid rgba(2,6,23,.06);
+        box-shadow: 0 8px 24px rgba(2,6,23,.06);
+        margin-bottom: 14px
+    }
+
+    .steps {
+        display: flex;
+        flex-direction: column;
+        gap: 8px
+    }
+
+    .step {
+        background: #f8feff;
+        border: 1px solid rgba(14,165,233,.2);
+        border-radius: 12px;
+        padding: 10px
+    }
+
+        .step small {
+            color: #64748b
+        }
+
+    #steps {
+        max-height: 38dvh;
+        overflow: auto;
+        padding-right: 6px
+    }
+
+    .poi {
+        background: #f8fafc;
+        border: 1px solid rgba(2,6,23,.06);
+        padding: 10px;
+        border-radius: 12px;
+        margin-bottom: 8px
+    }
+
+    .list {
+        max-height: 28dvh;
+        overflow: auto;
+        padding-right: 6px
+    }
+
+    .toast {
+        position: fixed;
+        right: 16px;
+        bottom: 80px;
+        z-index: 10000;
+        padding: 12px 14px;
+        background: #0ea5e9;
+        color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 12px 28px rgba(14,165,233,.35);
+        display: none;
+        font-weight: 700
+    }
+
+    .spinner {
+        width: 20px;
+        height: 20px;
+        border: 3px solid #bae6fd;
+        border-top-color: #0ea5e9;
+        border-radius: 50%;
+        animation: spin .9s linear infinite;
+        margin-right: 8px
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg)
+        }
+    }
+
+    .loading {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        color: #0369a1;
+        font-weight: 800
+    }
+
+    /* Marker base */
+    .poi-marker {
+        position: relative;
+        width: 32px;
+        height: 32px
+    }
+
+        .poi-marker .dot {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #fff 0 25%, #22d3ee 26% 70%, #0ea5e9 71% 100%);
+            border: 2px solid #0ea5e9;
+            box-shadow: 0 6px 12px rgba(14,165,233,.35)
+        }
+    /* Start (bus) overrides color */
+    .start-marker .dot {
+        background: radial-gradient(circle at 30% 30%, #fff 0 25%, #34d399 26% 70%, #16a34a 71% 100%);
+        border-color: #16a34a
+    }
+    /* Emoji/glyph centred on the dot */
+    .poi-marker .glyph {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -58%);
+        font-size: 18px;
+        line-height: 1;
+        filter: drop-shadow(0 1px 1px rgba(0,0,0,.15));
+        user-select: none;
+        pointer-events: none
+    }
+
+    .route-line {
+        filter: drop-shadow(0 2px 4px rgba(2,6,23,.25))
+    }
 </style>
 
-<h2>Lộ trình xe du lịch đến danh thắng</h2>
+<div class="page">
+    <div class="hero">
+        <div class="logo">🗺️</div>
+        <div>
+            <h3 class="m-0">Lộ trình Xe Du Lịch đến Danh Thắng</h3>
+            <div class="subtitle">Bản đồ lớn, hướng dẫn ở dưới – tối ưu cho xe 12–45 chỗ</div>
+        </div>
+    </div>
 
-<div class="panel">
-    <button id="btnUseMyLoc">Dùng vị trí hiện tại làm điểm xuất phát</button>
-    <button id="btnClear">Xoá tuyến</button>
-    <button id="btnRoute"><b>Tính đường (xe du lịch)</b></button>
-    <button id="btnOptimal"><b>Tuyến tối ưu</b></button>
+    <div class="map-wrap">
+        <div id="map"></div>
+        <div class="controls">
+            <button id="btnUseMyLoc" class="btn btn-pill">📍 Vị trí của tôi</button>
+            <button id="btnRoute" class="btn btn-primary btn-pill">🚐 Tính đường</button>
+            <button id="btnOptimal" class="btn btn-pill">✨ Tuyến tối ưu</button>
+            <button id="btnClear" class="btn btn-danger btn-pill">🧹 Xoá</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px">
+            <h5 class="m-0">Hướng dẫn lộ trình</h5>
+            <div id="loading" class="loading"><span class="spinner"></span>Đang tính toán…</div>
+        </div>
+        <div id="steps">
+            <div class="step">Chưa có tuyến. Hãy <b>chọn điểm</b> rồi bấm <b>Tính đường</b> hoặc <b>Tuyến tối ưu</b>.</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h5 class="m-0" style="margin-bottom:8px">Danh sách danh thắng</h5>
+        <div id="list" class="list"><div class="poi">Đang tải danh sách…</div></div>
+    </div>
 </div>
 
-<div id="map"></div>
-<div id="steps"></div>
+<div class="toast" id="toast"></div>
+@section Scripts {
+    <script>
+        // Xuất dữ liệu để JS ngoài file dùng
+        window.__ATTRACTIONS__ = @Html.Raw(JsonSerializer.Serialize(Model ?? new List<CityTourApp.Models.Attraction>()));
+    </script>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-    const map = L.map('map').setView([10.7769, 106.7008], 14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="~/js/Index.js"></script>
+}
 
-    // JSON danh thắng từ server
-    const data = @Html.Raw(JsonSerializer.Serialize(Model));
-    const markers = [];
-    let routeLayer = null;
-    const coords = []; // [[lng,lat],...]
-    let origin = null; // [lng,lat]
 
-    // Vẽ marker + popup "Thêm điểm này"
-    data.forEach(p => {
-        const lat = Number(p.Lat);
-        const lng = Number(p.Lng);
-        const name = p.Ten || "";
-        const addr = p.DiaChi || "";
-        const safeName = name.replace(/["']/g, "");
 
-        const m = L.marker([lat, lng]).addTo(map)
-            .bindPopup(`<b>${name}</b><br/>${addr}<br/>
-                <button onclick="addStop(${lng},${lat},'${safeName}')">Thêm điểm này</button>`);
-        markers.push(m);
-    });
-
-    window.addStop = (lng, lat, name) => {
-        coords.push([lng, lat]); // ORS cần [lng,lat]
-        alert(`Đã thêm: ${name}`);
-    };
-
-    document.getElementById('btnUseMyLoc').onclick = () => {
-        if (!navigator.geolocation) return alert("Trình duyệt không hỗ trợ định vị.");
-        navigator.geolocation.getCurrentPosition(pos => {
-            const { latitude, longitude } = pos.coords;
-            origin = [longitude, latitude];
-            L.marker([latitude, longitude]).addTo(map).bindPopup("Xuất phát").openPopup();
-            map.setView([latitude, longitude], 15);
-        }, () => alert("Không lấy được vị trí."));
-    };
-
-    document.getElementById('btnClear').onclick = () => {
-        if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
-        coords.length = 0; origin = null;
-        document.getElementById('steps').innerHTML = "";
-    };
-
-    // ============= NÚT TÍNH ĐƯỜNG (theo thứ tự đã chọn) =============
-    document.getElementById('btnRoute').onclick = async () => {
-        const points = [];
-        if (origin) points.push(origin);
-        if (coords.length === 0) return alert("Hãy chọn ít nhất 1 điểm tham quan.");
-        coords.forEach(c => points.push(c));
-
-        const res = await fetch('/api/coach-route', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                coords: points,
-                vehicle: { weightTons: 15, height: 3.5, width: 2.5, length: 12 },
-                avoidSmallRoads: true   // ✨ tránh đường nhỏ
-            })
-        });
-
-        if (!res.ok) {
-            const err = await res.text();
-            alert(`Không tính được tuyến.\n${res.status} ${res.statusText}\n${err}`);
-            return;
-        }
-
-        const json = await res.json();
-        const feat = json?.features?.[0];
-        if (!feat) return alert("Không có kết quả.");
-
-        if (routeLayer) map.removeLayer(routeLayer);
-        routeLayer = L.geoJSON(feat.geometry).addTo(map);
-        map.fitBounds(routeLayer.getBounds());
-
-        const steps = (feat.properties?.segments?.[0]?.steps ?? []);
-        let html = "<h3>Hướng dẫn</h3><ol>";
-        steps.forEach(s => html += `<li>${s.instruction} (${Math.round(s.distance)} m, ~${Math.round(s.duration / 60)} phút)</li>`);
-        html += "</ol>";
-        document.getElementById('steps').innerHTML = html;
-    };
-
-    // ============= NÚT TUYẾN TỐI ƯU (ORS Optimization) =============
-    document.getElementById('btnOptimal').onclick = async () => {
-        const points = [];
-        if (origin) points.push(origin);
-        if (coords.length === 0) return alert("Hãy chọn ít nhất 1 điểm tham quan.");
-        coords.forEach(c => points.push(c));
-
-        const res = await fetch('/api/coach-route-optimal', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ coords: points })
-        });
-
-        if (!res.ok) {
-            const err = await res.text();
-            alert(`Không tối ưu được tuyến.\n${res.status} ${res.statusText}\n${err}`);
-            return;
-        }
-
-        const json = await res.json();
-        const route = json?.routes?.[0];
-        if (!route) return alert("Không có kết quả.");
-
-        // Bước của optimization thường KHÔNG có distance cho từng step → chỉ liệt kê thứ tự
-        const steps = route.steps ?? [];
-        let html = "<h3>Lộ trình tối ưu</h3><ol>";
-        steps.forEach(s => {
-            const label = s.type === 'start' ? 'Xuất phát' : (s.type === 'end' ? 'Kết thúc' : `Điểm ${s.id}`);
-            html += `<li>${label}</li>`;
-        });
-        html += "</ol>";
-        document.getElementById('steps').innerHTML = html;
-
-        // Vẽ đường theo thứ tự tối ưu bằng directions (driving-hgv)
-        const ordered = steps.map(s => s.location);
-        const dirRes = await fetch('/api/coach-route', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                coords: ordered,
-                vehicle: { weightTons: 15, height: 3.5, width: 2.5, length: 12 }
-            })
-        });
-
-        if (!dirRes.ok) {
-            const err2 = await dirRes.text();
-            alert(`Không vẽ được tuyến tối ưu.\n${dirRes.status} ${dirRes.statusText}\n${err2}`);
-            return;
-        }
-
-        const dirJson = await dirRes.json();
-        const feat2 = dirJson?.features?.[0];
-        if (feat2) {
-            if (routeLayer) map.removeLayer(routeLayer);
-            routeLayer = L.geoJSON(feat2.geometry).addTo(map);
-            map.fitBounds(routeLayer.getBounds());
-        }
-    };
-
-    document.addEventListener("DOMContentLoaded", function () {
-        fetch("/api/Attractions")  // 🔥 URL API của bạn (kiểm tra đúng chưa)
-            .then(res => {
-                if (!res.ok) throw new Error("Lỗi khi gọi API");
-                return res.json();
-            })
-            .then(data => {
-                let html = "<h3>Danh sách danh thắng</h3><ul>";
-                data.forEach(p => {
-                    html += `<li><b>${p.ten}</b> - ${p.diaChi}</li>`;
-                });
-                html += "</ul>";
-                document.getElementById("list").innerHTML = html;
-
-                // đồng thời thêm marker lên bản đồ
-                data.forEach(p => {
-                    L.marker([p.latitude, p.longitude])
-                        .addTo(map)
-                        .bindPopup(`<b>${p.ten}</b><br>${p.diaChi}`);
-                });
-            })
-            .catch(err => {
-                document.getElementById("list").innerHTML = "Không tải được danh sách.";
-                console.error(err);
-            });
-    });
-</script>

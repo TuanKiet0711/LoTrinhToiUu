@@ -1,5 +1,4 @@
-﻿// Controllers/DirectionsController.cs
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Text;
 
 namespace LoTrinhToiUu.Controllers;
@@ -29,23 +28,37 @@ public class DirectionsController : ControllerBase
         {
             ["coordinates"] = req.Coords,
             ["instructions"] = true,
+            ["language"] = "vi",     // 🔥 chỉ dẫn tiếng Việt
             ["preference"] = "fastest",
             ["geometry"] = true
         };
 
-        // nếu yêu cầu tránh đường nhỏ
-        if (req.AvoidSmallRoads)
-        {
-            // Chỉ những avoid_features hợp lệ với profile driving-hgv
-            string[] validAvoidFeaturesHGV = new[] { "fords", "ferries" };
+        // options: avoid + HGV restrictions nếu có truyền vehicle
+        object? options = null;
 
-            payload["options"] = new
+        if (req.Vehicle is not null)
+        {
+            options = new
             {
-                avoid_features = validAvoidFeaturesHGV
+                avoid_features = req.AvoidSmallRoads ? new[] { "fords", "ferries" } : null,
+                profile_params = new
+                {
+                    restrictions = new
+                    {
+                        height = req.Vehicle.Height,            // mét
+                        width = req.Vehicle.Width,             // mét
+                        length = req.Vehicle.Length,            // mét
+                        weight = req.Vehicle.WeightTons * 1000  // kg
+                    }
+                }
             };
         }
+        else if (req.AvoidSmallRoads)
+        {
+            options = new { avoid_features = new[] { "fords", "ferries" } };
+        }
 
-
+        if (options is not null) payload["options"] = options;
 
         var json = System.Text.Json.JsonSerializer.Serialize(payload);
         var msg = new HttpRequestMessage(HttpMethod.Post, url);
@@ -68,16 +81,12 @@ public class DirectionsController : ControllerBase
         var apiKey = _cfg["ORS:ApiKey"] ?? "";
         var url = "https://api.openrouteservice.org/optimization";
 
-        var jobs = req.Coords.Skip(1).Select((c, i) => new
-        {
-            id = i + 1,
-            location = c
-        }).ToList();
+        var jobs = req.Coords.Skip(1).Select((c, i) => new { id = i + 1, location = c }).ToList();
 
         var vehicle = new
         {
             id = 1,
-            profile = "driving-car",   // ORS optimization chỉ hỗ trợ profile chuẩn
+            profile = "driving-car",  // ORS optimization hỗ trợ profile chuẩn
             start = req.Coords.First()
         };
 
@@ -99,7 +108,7 @@ public class DirectionsController : ControllerBase
     {
         public List<double[]> Coords { get; set; } = new(); // [[lng,lat],...]
         public VehicleSpec? Vehicle { get; set; }
-        public bool AvoidSmallRoads { get; set; } = true;   // mặc định tránh đường nhỏ
+        public bool AvoidSmallRoads { get; set; } = true;
     }
     public class VehicleSpec
     {
