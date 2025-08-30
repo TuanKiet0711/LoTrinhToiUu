@@ -1,4 +1,5 @@
 ﻿@model IEnumerable<CityTourApp.Models.Attraction>
+@using System.Text.Json
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
@@ -16,11 +17,14 @@
 </style>
 
 <h2>Lộ trình xe du lịch đến danh thắng</h2>
+
 <div class="panel">
     <button id="btnUseMyLoc">Dùng vị trí hiện tại làm điểm xuất phát</button>
     <button id="btnClear">Xoá tuyến</button>
     <button id="btnRoute"><b>Tính đường (xe du lịch)</b></button>
+    <button id="btnOptimal"><b>Tuyến tối ưu</b></button>
 </div>
+
 <div id="map"></div>
 <div id="steps"></div>
 
@@ -29,28 +33,29 @@
     const map = L.map('map').setView([10.7769, 106.7008], 14);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
-    // Lưu ý: System.Text.Json đang serialize PascalCase -> dùng p.Ten, p.Lat, p.Lng, p.DiaChi
-    const data = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model));
+    // JSON danh thắng từ server
+    const data = @Html.Raw(JsonSerializer.Serialize(Model));
     const markers = [];
     let routeLayer = null;
     const coords = []; // [[lng,lat],...]
     let origin = null; // [lng,lat]
 
-    // Vẽ marker và popup "Thêm điểm này"
+    // Vẽ marker + popup "Thêm điểm này"
     data.forEach(p => {
         const lat = Number(p.Lat);
         const lng = Number(p.Lng);
-        const name = p.Ten;
-        const addr = p.DiaChi ?? "";
+        const name = p.Ten || "";
+        const addr = p.DiaChi || "";
+        const safeName = name.replace(/["']/g, "");
 
         const m = L.marker([lat, lng]).addTo(map)
             .bindPopup(`<b>${name}</b><br/>${addr}<br/>
-            <button onclick="addStop(${lng},${lat},'${(name || '').replace(/'/g, "\\'")}')">Thêm điểm này</button>`);
+                <button onclick="addStop(${lng},${lat},'${safeName}')">Thêm điểm này</button>`);
         markers.push(m);
     });
 
     window.addStop = (lng, lat, name) => {
-        coords.push([lng, lat]);           // ORS yêu cầu [lng,lat]
+        coords.push([lng, lat]); // ORS cần [lng,lat]
         alert(`Đã thêm: ${name}`);
     };
 
@@ -70,6 +75,7 @@
         document.getElementById('steps').innerHTML = "";
     };
 
+    // ============= NÚT TÍNH ĐƯỜNG (theo thứ tự đã chọn) =============
     document.getElementById('btnRoute').onclick = async () => {
         const points = [];
         if (origin) points.push(origin);
@@ -81,14 +87,20 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 coords: points,
-                vehicle: { weightTons: 15, height: 3.5, width: 2.5, length: 12 }
+                vehicle: { weightTons: 15, height: 3.5, width: 2.5, length: 12 },
+                avoidSmallRoads: true   // ✨ tránh đường nhỏ
             })
         });
 
-        if (!res.ok) { alert("Không tính được tuyến."); return; }
+        if (!res.ok) {
+            const err = await res.text();
+            alert(`Không tính được tuyến.\n${res.status} ${res.statusText}\n${err}`);
+            return;
+        }
+
         const json = await res.json();
         const feat = json?.features?.[0];
-        if (!feat) { alert("Không có kết quả."); return; }
+        if (!feat) return alert("Không có kết quả.");
 
         if (routeLayer) map.removeLayer(routeLayer);
         routeLayer = L.geoJSON(feat.geometry).addTo(map);
@@ -100,4 +112,90 @@
         html += "</ol>";
         document.getElementById('steps').innerHTML = html;
     };
+
+    // ============= NÚT TUYẾN TỐI ƯU (ORS Optimization) =============
+    document.getElementById('btnOptimal').onclick = async () => {
+        const points = [];
+        if (origin) points.push(origin);
+        if (coords.length === 0) return alert("Hãy chọn ít nhất 1 điểm tham quan.");
+        coords.forEach(c => points.push(c));
+
+        const res = await fetch('/api/coach-route-optimal', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ coords: points })
+        });
+
+        if (!res.ok) {
+            const err = await res.text();
+            alert(`Không tối ưu được tuyến.\n${res.status} ${res.statusText}\n${err}`);
+            return;
+        }
+
+        const json = await res.json();
+        const route = json?.routes?.[0];
+        if (!route) return alert("Không có kết quả.");
+
+        // Bước của optimization thường KHÔNG có distance cho từng step → chỉ liệt kê thứ tự
+        const steps = route.steps ?? [];
+        let html = "<h3>Lộ trình tối ưu</h3><ol>";
+        steps.forEach(s => {
+            const label = s.type === 'start' ? 'Xuất phát' : (s.type === 'end' ? 'Kết thúc' : `Điểm ${s.id}`);
+            html += `<li>${label}</li>`;
+        });
+        html += "</ol>";
+        document.getElementById('steps').innerHTML = html;
+
+        // Vẽ đường theo thứ tự tối ưu bằng directions (driving-hgv)
+        const ordered = steps.map(s => s.location);
+        const dirRes = await fetch('/api/coach-route', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                coords: ordered,
+                vehicle: { weightTons: 15, height: 3.5, width: 2.5, length: 12 }
+            })
+        });
+
+        if (!dirRes.ok) {
+            const err2 = await dirRes.text();
+            alert(`Không vẽ được tuyến tối ưu.\n${dirRes.status} ${dirRes.statusText}\n${err2}`);
+            return;
+        }
+
+        const dirJson = await dirRes.json();
+        const feat2 = dirJson?.features?.[0];
+        if (feat2) {
+            if (routeLayer) map.removeLayer(routeLayer);
+            routeLayer = L.geoJSON(feat2.geometry).addTo(map);
+            map.fitBounds(routeLayer.getBounds());
+        }
+    };
+
+    document.addEventListener("DOMContentLoaded", function () {
+        fetch("/api/Attractions")  // 🔥 URL API của bạn (kiểm tra đúng chưa)
+            .then(res => {
+                if (!res.ok) throw new Error("Lỗi khi gọi API");
+                return res.json();
+            })
+            .then(data => {
+                let html = "<h3>Danh sách danh thắng</h3><ul>";
+                data.forEach(p => {
+                    html += `<li><b>${p.ten}</b> - ${p.diaChi}</li>`;
+                });
+                html += "</ul>";
+                document.getElementById("list").innerHTML = html;
+
+                // đồng thời thêm marker lên bản đồ
+                data.forEach(p => {
+                    L.marker([p.latitude, p.longitude])
+                        .addTo(map)
+                        .bindPopup(`<b>${p.ten}</b><br>${p.diaChi}`);
+                });
+            })
+            .catch(err => {
+                document.getElementById("list").innerHTML = "Không tải được danh sách.";
+                console.error(err);
+            });
+    });
 </script>
