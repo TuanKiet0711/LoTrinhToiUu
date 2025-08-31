@@ -1,8 +1,106 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Trang chủ";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold" asp-controller="Home" asp-action="Index">LoTrinhToiUu 🗺️</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" asp-controller="Home" asp-action="Index">Trang chủ</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="Attractions" asp-action="Index">Bản đồ</a>
+                </li>
+
+                <!-- Dropdown -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        Danh mục
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="#">Danh thắng</a></li>
+                        <li><a class="dropdown-item" href="#">Lộ trình gợi ý</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#">Hỗ trợ</a></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="Home" asp-action="About">Giới thiệu</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero section -->
+<div class="hero-banner text-white d-flex align-items-center justify-content-center">
+    <div class="text-center">
+        <h1 class="display-3 fw-bold">LoTrinhToiUu 🗺️</h1>
+        <p class="lead mb-4">
+            Ứng dụng hỗ trợ tìm <b>lộ trình tối ưu</b> cho xe du lịch đến các danh thắng.
+        </p>
+        <a asp-controller="Attractions" asp-action="Index" class="btn btn-lg btn-app btn-primary shadow">
+            🚐 Mở bản đồ
+        </a>
+    </div>
 </div>
+
+<!-- Cards giới thiệu -->
+<div class="container mt-5 pt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body text-center">
+                    <h5 class="card-title fw-bold">✨ Lộ trình thông minh</h5>
+                    <p class="card-text text-muted">
+                        Tính toán tuyến đường nhanh chóng, phù hợp xe 12–45 chỗ.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mt-4 mt-md-0">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body text-center">
+                    <h5 class="card-title fw-bold">🏞️ Danh thắng</h5>
+                    <p class="card-text text-muted">
+                        Khám phá các địa điểm tham quan nổi bật được hiển thị trực quan trên bản đồ.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-5 text-center">
+        <p class="text-muted">
+            🔧 Được xây dựng bằng <b>ASP.NET Core MVC</b> & LeafletJS.
+        </p>
+    </div>
+</div>
+
+@section Head {
+    <style>
+        /* Hero banner */
+        .hero-banner {
+            height: 70vh;
+            background: url("https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1500&q=80") center/cover no-repeat;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 6px 24px rgba(0,0,0,.2);
+            margin-top: 70px; /* để tránh bị che bởi navbar fixed-top */
+        }
+
+            .hero-banner h1, .hero-banner p {
+                text-shadow: 0 3px 8px rgba(0,0,0,.5);
+            }
+    </style>
+}

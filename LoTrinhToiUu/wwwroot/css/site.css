@@ -1,22 +1,47 @@
 html {
-  font-size: 14px;
+    font-size: 14px;
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+    html {
+        font-size: 16px;
+    }
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
 html {
-  position: relative;
-  min-height: 100%;
+    position: relative;
+    min-height: 100%;
 }
 
 body {
-  margin-bottom: 60px;
+    margin-bottom: 60px;
 }
+
+/* Dark mode cho toàn trang */
+body.dark {
+     background: #1e293b;
+     color: #e2e8f0;
+}
+
+        /* Dark mode cho card */
+        body.dark .card {
+            background: #334155;
+            color: #f1f5f9;
+            border-color: #475569;
+        }
+
+        /* Dark mode cho step & poi */
+        body.dark .step,
+        body.dark .poi {
+            background: #475569;
+            color: #f1f5f9;
+        }
+
+        /* Dark mode cho map container */
+        body.dark .map-wrap {
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.2), 0 8px 24px rgba(0,0,0,0.5);
+        }

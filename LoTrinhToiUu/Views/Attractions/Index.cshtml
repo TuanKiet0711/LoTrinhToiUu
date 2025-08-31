@@ -1,288 +1,304 @@
 ﻿@model IEnumerable<CityTourApp.Models.Attraction>
 @{
-    ViewData["Title"] = "Bản đồ";
-    ViewData["FullBleed"] = true; // dùng layout full screen
+	ViewData["Title"] = "Bản đồ";
+	ViewData["FullBleed"] = true; // dùng layout full screen
 }
 @using System.Text.Json
 
 @section Head {
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 }
 
 <style>
-    :root {
-        --accent: #0ea5e9;
-        --accent2: #22d3ee;
-        --ink: #0f172a;
-        --muted: #64748b;
-        --ring: rgba(14,165,233,.35);
-    }
+	:root {
+		--accent: #0ea5e9;
+		--accent2: #22d3ee;
+		--ink: #0f172a;
+		--muted: #64748b;
+		--ring: rgba(14,165,233,.35);
+	}
 
-    * {
-        box-sizing: border-box
-    }
+	* {
+		box-sizing: border-box
+	}
 
-    html, body {
-        height: 100%
-    }
+	html, body {
+		height: 100%
+	}
 
-    .page {
-        max-width: 1200px;
-        margin: 14px auto;
-        padding: 0 16px 24px;
-    }
+	.page {
+		max-width: 1200px;
+		margin: 14px auto;
+		padding: 0 16px 24px;
+	}
 
-    .hero {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 10px
-    }
+	.hero {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		margin-bottom: 10px
+	}
 
-    .logo {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        background: linear-gradient(135deg,var(--accent),var(--accent2));
-        color: #fff;
-        display: grid;
-        place-items: center;
-        font-weight: 800;
-        box-shadow: 0 6px 18px rgba(14,165,233,.35)
-    }
+	.logo {
+		width: 40px;
+		height: 40px;
+		border-radius: 12px;
+		background: linear-gradient(135deg,var(--accent),var(--accent2));
+		color: #fff;
+		display: grid;
+		place-items: center;
+		font-weight: 800;
+		box-shadow: 0 6px 18px rgba(14,165,233,.35)
+	}
 
-    .subtitle {
-        color: var(--muted);
-        margin-top: 2px
-    }
+	.subtitle {
+		color: var(--muted);
+		margin-top: 2px
+	}
 
-    .map-wrap {
-        position: relative;
-        width: 100%;
-        height: 60dvh;
-        margin-bottom: 14px
-    }
+	.map-wrap {
+		position: relative;
+		width: 100%;
+		height: 60dvh;
+		margin-bottom: 14px;
+		border-radius: 16px;
+		overflow: hidden;
+		box-shadow: 0 0 0 3px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.25);
+	}
 
-    #map {
-        position: absolute;
-        inset: 0;
-        border-radius: 14px;
-        outline: 1px solid rgba(2,6,23,.06)
-    }
+	#map {
+		position: absolute;
+		inset: 0;
+		border-radius: 14px;
+		outline: 1px solid rgba(2,6,23,.06)
+	}
 
-    .controls {
-        position: absolute;
-        left: 12px;
-        top: 12px;
-        z-index: 500;
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap
-    }
+	.controls {
+		position: absolute;
+		left: 12px;
+		top: 12px;
+		z-index: 500;
+		display: flex;
+		gap: 8px;
+		flex-wrap: wrap
+	}
 
-    .btn {
-        appearance: none;
-        border: 0;
-        cursor: pointer;
-        padding: 10px 14px;
-        border-radius: 12px;
-        font-weight: 700;
-        background: #fff;
-        color: #0c4a6e;
-        box-shadow: 0 8px 24px rgba(2,6,23,.10), 0 0 0 1px rgba(2,6,23,.06) inset;
-        transition: .2s transform,.2s box-shadow
-    }
+	.btn {
+		appearance: none;
+		border: 0;
+		cursor: pointer;
+		padding: 10px 14px;
+		border-radius: 12px;
+		font-weight: 700;
+		background: #fff;
+		color: #0c4a6e;
+		box-shadow: 0 8px 24px rgba(2,6,23,.10), 0 0 0 1px rgba(2,6,23,.06) inset;
+		transition: .2s transform,.2s box-shadow
+	}
 
-        .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 12px 28px rgba(2,6,23,.16), 0 0 0 1px rgba(2,6,23,.06) inset
-        }
+		.btn:hover {
+			transform: translateY(-1px);
+			box-shadow: 0 12px 28px rgba(2,6,23,.16), 0 0 0 1px rgba(2,6,23,.06) inset
+		}
 
-        .btn:focus {
-            outline: 3px solid var(--ring)
-        }
+		.btn:focus {
+			outline: 3px solid var(--ring)
+		}
 
-    .btn-primary {
-        background: linear-gradient(135deg,var(--accent),var(--accent2));
-        color: #fff
-    }
+	.btn-primary {
+		background: linear-gradient(135deg,var(--accent),var(--accent2));
+		color: #fff
+	}
 
-    .btn-danger {
-        background: #fee2e2;
-        color: #7f1d1d
-    }
+	.btn-danger {
+		background: #fee2e2;
+		color: #7f1d1d
+	}
 
-    .btn-pill {
-        border-radius: 999px
-    }
+	.btn-pill {
+		border-radius: 999px
+	}
 
-    .card {
-        background: #fff;
-        border-radius: 14px;
-        padding: 12px;
-        border: 1px solid rgba(2,6,23,.06);
-        box-shadow: 0 8px 24px rgba(2,6,23,.06);
-        margin-bottom: 14px
-    }
+	.card {
+		background: #fff;
+		border-radius: 14px;
+		padding: 12px;
+		border: 1px solid rgba(2,6,23,.06);
+		box-shadow: 0 8px 24px rgba(2,6,23,.06);
+		margin-bottom: 14px
+	}
 
-    .steps {
-        display: flex;
-        flex-direction: column;
-        gap: 8px
-    }
+	.steps {
+		display: flex;
+		flex-direction: column;
+		gap: 8px
+	}
 
-    .step {
-        background: #f8feff;
-        border: 1px solid rgba(14,165,233,.2);
-        border-radius: 12px;
-        padding: 10px
-    }
+	.step {
+		background: #f8feff;
+		border: 1px solid rgba(14,165,233,.2);
+		border-radius: 12px;
+		padding: 10px
+	}
 
-        .step small {
-            color: #64748b
-        }
+		.step small {
+			color: #64748b
+		}
 
-    #steps {
-        max-height: 38dvh;
-        overflow: auto;
-        padding-right: 6px
-    }
+	#steps {
+		max-height: 38dvh;
+		overflow: auto;
+		padding-right: 6px
+	}
 
-    .poi {
-        background: #f8fafc;
-        border: 1px solid rgba(2,6,23,.06);
-        padding: 10px;
-        border-radius: 12px;
-        margin-bottom: 8px
-    }
+	.poi {
+		background: #f8fafc;
+		border: 1px solid rgba(2,6,23,.06);
+		padding: 10px;
+		border-radius: 12px;
+		margin-bottom: 8px
+	}
 
-    .list {
-        max-height: 28dvh;
-        overflow: auto;
-        padding-right: 6px
-    }
+	.list {
+		max-height: 28dvh;
+		overflow: auto;
+		padding-right: 6px
+	}
 
-    .toast {
-        position: fixed;
-        right: 16px;
-        bottom: 80px;
-        z-index: 10000;
-        padding: 12px 14px;
-        background: #0ea5e9;
-        color: #fff;
-        border-radius: 12px;
-        box-shadow: 0 12px 28px rgba(14,165,233,.35);
-        display: none;
-        font-weight: 700
-    }
+	.toast {
+		position: fixed;
+		right: 16px;
+		bottom: 80px;
+		z-index: 10000;
+		padding: 12px 14px;
+		background: #0ea5e9;
+		color: #fff;
+		border-radius: 12px;
+		box-shadow: 0 12px 28px rgba(14,165,233,.35);
+		display: none;
+		font-weight: 700
+	}
 
-    .spinner {
-        width: 20px;
-        height: 20px;
-        border: 3px solid #bae6fd;
-        border-top-color: #0ea5e9;
-        border-radius: 50%;
-        animation: spin .9s linear infinite;
-        margin-right: 8px
-    }
+	.spinner {
+		width: 20px;
+		height: 20px;
+		border: 3px solid #bae6fd;
+		border-top-color: #0ea5e9;
+		border-radius: 50%;
+		animation: spin .9s linear infinite;
+		margin-right: 8px
+	}
 
-    @@keyframes spin {
-        to {
-            transform: rotate(360deg)
-        }
-    }
+	@@keyframes spin {
+		to {
+			transform: rotate(360deg)
+		}
+	}
 
-    .loading {
-        display: none;
-        align-items: center;
-        gap: 8px;
-        color: #0369a1;
-        font-weight: 800
-    }
+	.loading {
+		display: none;
+		align-items: center;
+		gap: 8px;
+		color: #0369a1;
+		font-weight: 800
+	}
 
-    /* Marker base */
-    .poi-marker {
-        position: relative;
-        width: 32px;
-        height: 32px
-    }
+	/* Marker base */
+	.poi-marker {
+		position: relative;
+		width: 32px;
+		height: 32px
+	}
 
-        .poi-marker .dot {
-            position: absolute;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, #fff 0 25%, #22d3ee 26% 70%, #0ea5e9 71% 100%);
-            border: 2px solid #0ea5e9;
-            box-shadow: 0 6px 12px rgba(14,165,233,.35)
-        }
-    /* Start (bus) overrides color */
-    .start-marker .dot {
-        background: radial-gradient(circle at 30% 30%, #fff 0 25%, #34d399 26% 70%, #16a34a 71% 100%);
-        border-color: #16a34a
-    }
-    /* Emoji/glyph centred on the dot */
-    .poi-marker .glyph {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -58%);
-        font-size: 18px;
-        line-height: 1;
-        filter: drop-shadow(0 1px 1px rgba(0,0,0,.15));
-        user-select: none;
-        pointer-events: none
-    }
+		.poi-marker .dot {
+			position: absolute;
+			width: 32px;
+			height: 32px;
+			border-radius: 50%;
+			background: radial-gradient(circle at 30% 30%, #fff 0 25%, #22d3ee 26% 70%, #0ea5e9 71% 100%);
+			border: 2px solid #0ea5e9;
+			box-shadow: 0 6px 12px rgba(14,165,233,.35)
+		}
+	/* Start (bus) overrides color */
+	.start-marker .dot {
+		background: radial-gradient(circle at 30% 30%, #fff 0 25%, #34d399 26% 70%, #16a34a 71% 100%);
+		border-color: #16a34a
+	}
+	/* Emoji/glyph centred on the dot */
+	.poi-marker .glyph {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		transform: translate(-50%, -58%);
+		font-size: 18px;
+		line-height: 1;
+		filter: drop-shadow(0 1px 1px rgba(0,0,0,.15));
+		user-select: none;
+		pointer-events: none
+	}
 
-    .route-line {
-        filter: drop-shadow(0 2px 4px rgba(2,6,23,.25))
-    }
+	.route-line {
+		filter: drop-shadow(0 2px 4px rgba(2,6,23,.25))
+	}
+
+	#searchBox {
+		position: relative;
+		z-index: 1000; /* cao hơn map */
+		padding: 8px 12px;
+		border-radius: 8px;
+		border: 1px solid #ccc;
+	}
+
 </style>
 
 <div class="page">
-    <div class="hero">
-        <div class="logo">🗺️</div>
-        <div>
-            <h3 class="m-0">Lộ trình Xe Du Lịch đến Danh Thắng</h3>
-            <div class="subtitle">Bản đồ lớn, hướng dẫn ở dưới – tối ưu cho xe 12–45 chỗ</div>
-        </div>
-    </div>
+	<div class="hero">
+		<div class="logo">🗺️</div>
+		<div>
+			<h3 class="m-0">Lộ trình Xe Du Lịch đến Danh Thắng</h3>
+			<div class="subtitle">Bản đồ lớn, hướng dẫn ở dưới – tối ưu cho xe 12–45 chỗ</div>
+		</div>
+	</div>
 
-    <div class="map-wrap">
-        <div id="map"></div>
-        <div class="controls">
-            <button id="btnUseMyLoc" class="btn btn-pill">📍 Vị trí của tôi</button>
-            <button id="btnRoute" class="btn btn-primary btn-pill">🚐 Tính đường</button>
-            <button id="btnOptimal" class="btn btn-pill">✨ Tuyến tối ưu</button>
-            <button id="btnClear" class="btn btn-danger btn-pill">🧹 Xoá</button>
-        </div>
-    </div>
+	<div class="map-wrap">
+		<div id="map"></div>
+		<div class="controls">
+			<input id="searchBox" type="text" placeholder="🔍 Tìm địa điểm..."
+				   style="flex:1; min-width:200px; padding:8px 12px; border-radius:12px; border:1px solid rgba(2,6,23,.15); outline:none" />
+			<button id="btnUseMyLoc" class="btn btn-pill">📍 Vị trí của tôi</button>
+			<button id="btnRoute" class="btn btn-primary btn-pill">🚐 Tính đường</button>
+			<button id="btnOptimal" class="btn btn-pill">✨ Tuyến tối ưu</button>
+			<button id="btnClear" class="btn btn-danger btn-pill">🧹 Xoá</button>
+			<!-- Nút toggle dark/light -->
+			<button id="btnTheme" class="btn btn-pill">🌙 Dark</button>
+		</div>
+	</div>
 
-    <div class="card">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px">
-            <h5 class="m-0">Hướng dẫn lộ trình</h5>
-            <div id="loading" class="loading"><span class="spinner"></span>Đang tính toán…</div>
-        </div>
-        <div id="steps">
-            <div class="step">Chưa có tuyến. Hãy <b>chọn điểm</b> rồi bấm <b>Tính đường</b> hoặc <b>Tuyến tối ưu</b>.</div>
-        </div>
-    </div>
+	<div class="card">
+		<div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px">
+			<h5 class="m-0">Hướng dẫn lộ trình</h5>
+			<div id="loading" class="loading"><span class="spinner"></span>Đang tính toán…</div>
+		</div>
+		<div id="steps">
+			<div class="step">Chưa có tuyến. Hãy <b>chọn điểm</b> rồi bấm <b>Tính đường</b> hoặc <b>Tuyến tối ưu</b>.</div>
+		</div>
+	</div>
 
-    <div class="card">
-        <h5 class="m-0" style="margin-bottom:8px">Danh sách danh thắng</h5>
-        <div id="list" class="list"><div class="poi">Đang tải danh sách…</div></div>
-    </div>
+	<div class="card">
+		<h5 class="m-0" style="margin-bottom:8px">Danh sách danh thắng</h5>
+		<div id="list" class="list"><div class="poi">Đang tải danh sách…</div></div>
+	</div>
 </div>
 
 <div class="toast" id="toast"></div>
 @section Scripts {
-    <script>
-        // Xuất dữ liệu để JS ngoài file dùng
-        window.__ATTRACTIONS__ = @Html.Raw(JsonSerializer.Serialize(Model ?? new List<CityTourApp.Models.Attraction>()));
-    </script>
+	<script>
+		// Xuất dữ liệu để JS ngoài file dùng
+		window.__ATTRACTIONS__ = @Html.Raw(JsonSerializer.Serialize(Model ?? new List<CityTourApp.Models.Attraction>()));
+	</script>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="~/js/Index.js"></script>
+	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+	<script src="~/js/Index.js"></script>
 }
 
 

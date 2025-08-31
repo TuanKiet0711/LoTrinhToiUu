@@ -20,6 +20,6 @@ app.MapControllers();                         // ?? r?t quan tr?ng
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Attractions}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();

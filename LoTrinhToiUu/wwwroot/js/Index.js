@@ -1,6 +1,11 @@
 ﻿// ==== Khởi tạo bản đồ
-const map = L.map('map', { zoomControl: true }).setView([10.7769, 106.7008], 14);
+const map = L.map('map', { zoomControl: false }).setView([10.7769, 106.7008], 14);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: "&copy; OpenStreetMap" }).addTo(map);
+
+// Đặt lại zoom control sang góc phải trên
+L.control.zoom({
+    position: 'topright'
+}).addTo(map);
 
 // Nhận dữ liệu đã inject từ Razor (nếu có), fallback mảng rỗng
 const data = Array.isArray(window.__ATTRACTIONS__) ? window.__ATTRACTIONS__ : [];
@@ -194,12 +199,16 @@ document.addEventListener("DOMContentLoaded", () => {
             items.forEach(p => {
                 const safeName = (p.ten || '').replace(/["'<>&]/g, '');
                 const item = document.createElement('div'); item.className = 'poi';
-                item.innerHTML = `<b>${safeName}</b>
-          <div style="color:#64748b">${p.diaChi ?? ''}</div>
-          <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
-            <button class="btn btn-primary" style="padding:6px 10px" onclick="addStop(${p.lng},${p.lat},'${safeName}')">➕ Thêm vào tuyến</button>
-            <button class="btn" style="padding:6px 10px" onclick="focusHere(${p.lat},${p.lng})">🎯 Xem trên bản đồ</button>
-          </div>`;
+                item.innerHTML = `
+                <b>${safeName}</b>
+                <div style="color:#64748b">${p.diaChi ?? ''}</div>
+                <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
+                <button class="btn btn-primary" style="padding:6px 10px"
+                data-lat="${p.lat}" data-lng="${p.lng}" onclick="addStop(${p.lng},${p.lat},'${safeName}')">➕ Thêm vào tuyến</button>
+                <button class="btn" style="padding:6px 10px"
+                data-lat="${p.lat}" data-lng="${p.lng}" onclick="focusHere(${p.lat},${p.lng})">🎯 Xem trên bản đồ</button>
+                </div>`;
+
                 list.appendChild(item);
 
                 L.marker([p.lat, p.lng], { icon: getPoiIcon(p.ten) }).addTo(map).bindPopup(
@@ -215,3 +224,71 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error(err);
         });
 });
+
+
+// ==== Tìm kiếm danh thắng
+const searchBox = document.getElementById("searchBox");
+if (searchBox) {
+    searchBox.addEventListener("input", () => {
+        const term = searchBox.value.trim().toLowerCase();
+        const list = document.getElementById("list");
+        const pois = list.querySelectorAll(".poi");
+
+        pois.forEach(poi => {
+            const name = poi.querySelector("b")?.textContent.toLowerCase() || "";
+            const addr = poi.querySelector("div")?.textContent.toLowerCase() || "";
+            const match = name.includes(term) || addr.includes(term);
+            poi.style.display = match ? "block" : "none";
+
+            if (match && term) {
+                // highlight text
+                poi.querySelector("b").innerHTML =
+                    name.replace(new RegExp(`(${term})`, "gi"), "<mark>$1</mark>");
+            } else {
+                poi.querySelector("b").innerHTML = poi.querySelector("b").textContent;
+            }
+        });
+
+        // Nếu có match đầu tiên -> focus vào map
+        if (term) {
+            const first = list.querySelector(".poi[style*='block']");
+            if (first) {
+                const btn = first.querySelector("button[data-lat][data-lng]");
+                if (btn) {
+                    const lat = parseFloat(btn.getAttribute("data-lat"));
+                    const lng = parseFloat(btn.getAttribute("data-lng"));
+                    focusHere(lat, lng);
+                }
+            }
+        }
+
+
+    });
+}
+
+// ==== Toggle Dark/Light mode
+const btnTheme = document.getElementById("btnTheme");
+let lightLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, attribution: "&copy; OpenStreetMap"
+});
+let darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19, attribution: "&copy; <a href='https://carto.com/'>CARTO</a>"
+});
+
+// khởi tạo mặc định là sáng
+map.addLayer(lightLayer);
+
+if (btnTheme) {
+    btnTheme.onclick = () => {
+        document.body.classList.toggle("dark");
+        if (document.body.classList.contains("dark")) {
+            if (map.hasLayer(lightLayer)) map.removeLayer(lightLayer);
+            map.addLayer(darkLayer);
+            btnTheme.textContent = "☀️ Light";
+        } else {
+            if (map.hasLayer(darkLayer)) map.removeLayer(darkLayer);
+            map.addLayer(lightLayer);
+            btnTheme.textContent = "🌙 Dark";
+        }
+    };
+}
