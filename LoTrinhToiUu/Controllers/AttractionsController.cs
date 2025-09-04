@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using LoTrinhToiUu.Data;
-
+﻿using LoTrinhToiUu.Data;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+[Authorize]
 public class AttractionsController : Controller
 {
+    
     private readonly CityTourContext _db;
     public AttractionsController(CityTourContext db) => _db = db;
 

@@ -1,36 +1,6 @@
 ﻿@{
     ViewData["Title"] = "Trang chủ";
 }
-
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
-    <div class="container">
-        <a class="navbar-brand fw-bold" asp-controller="Home" asp-action="Index">LoTrinhToiUu 🗺️</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link active" asp-controller="Home" asp-action="Index">Trang chủ</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" asp-controller="Attractions" asp-action="Index">Bản đồ</a>
-                </li>
-
-                <!-- Dropdown -->
-
-
-                <li class="nav-item">
-                    <a class="nav-link" asp-controller="Home" asp-action="About">Giới thiệu</a>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
-
 <!-- Hero section -->
 <div class="hero-banner text-white d-flex align-items-center justify-content-center">
     <div class="text-center">

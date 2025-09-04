@@ -8,6 +8,7 @@ namespace LoTrinhToiUu.Data
         public CityTourContext(DbContextOptions<CityTourContext> options) : base(options) { }
 
         public DbSet<Attraction> Attractions => Set<Attraction>();
+        public DbSet<NguoiDung> NguoiDung { get; set; }
         // (Nếu không dùng RoutePlans/RouteSteps có thể bỏ)
         // public DbSet<RoutePlan> RoutePlans => Set<RoutePlan>();
         // public DbSet<RouteStep> RouteSteps => Set<RouteStep>();

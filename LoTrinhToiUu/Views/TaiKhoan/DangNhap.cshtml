@@ -1,0 +1,98 @@
+﻿@if (TempData["DangKyThanhCong"] != null)
+{
+    <div class="alert alert-success text-center">
+        @TempData["DangKyThanhCong"]
+    </div>
+}
+
+@{
+    ViewData["Title"] = "Đăng nhập";
+    var returnUrl = ViewBag.ReturnUrl ?? Context.Request.Query["ReturnUrl"].ToString();
+}
+
+<style>
+    :root {
+        scrollbar-gutter: stable both-edges;
+    }
+
+    html, body {
+        height: 100%;
+        margin: 0;
+        /* Cho trang login full-screen, tránh cuộn dọc ngoài ý muốn */
+        overflow: hidden;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    .auth-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(to bottom, #f0faff, #ffffff);
+        transform: translateY(-10%); /* Đẩy form lên cao một chút */
+    }
+
+    /* Nếu bạn muốn nền ảnh thay vì gradient, dùng .auth-bg thay cho .auth-container */
+    .auth-bg {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: url('/images/travel-bg.jpg') center/cover no-repeat;
+        transform: translateY(-10%);
+    }
+
+    .auth-card,
+    .auth-card-lg {
+        width: 420px;
+        border-radius: 20px;
+        backdrop-filter: blur(12px);
+        background: rgba(255,255,255,0.95);
+    }
+
+    .auth-card-lg {
+        width: 460px;
+        background: rgba(255,255,255,0.9);
+    }
+</style>
+
+<div class="auth-container">
+    <div class="card shadow-lg border-0 auth-card">
+        <div class="card-body p-4">
+            <h2 class="text-center mb-4 text-primary fw-bold">🌍 Đăng nhập</h2>
+
+            @if (ViewBag.Loi != null)
+            {
+                <div class="alert alert-danger text-center">@ViewBag.Loi</div>
+            }
+
+            <form asp-action="DangNhap" method="post">
+                @Html.AntiForgeryToken() <!-- QUAN TRỌNG -->
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" for="email">Email</label>
+                    <input id="email" type="email" name="email" class="form-control rounded-pill"
+                           placeholder="Nhập email..." required autocomplete="username" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" for="matkhau">Mật khẩu</label>
+                    <input id="matkhau" type="password" name="matkhau" class="form-control rounded-pill"
+                           placeholder="Nhập mật khẩu..." required autocomplete="current-password" />
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary rounded-pill fw-bold shadow">
+                        Đăng nhập
+                    </button>
+                </div>
+            </form>
+
+            <p class="text-center mt-3">
+                Chưa có tài khoản?
+                <a asp-action="DangKy" class="fw-bold text-decoration-none text-success">Đăng ký ngay</a>
+            </p>
+        </div>
+    </div>
+</div>

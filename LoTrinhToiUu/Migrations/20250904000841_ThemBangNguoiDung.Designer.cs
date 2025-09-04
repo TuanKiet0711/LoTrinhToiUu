@@ -3,6 +3,7 @@ using LoTrinhToiUu.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LoTrinhToiUu.Migrations
 {
     [DbContext(typeof(CityTourContext))]
-    partial class CityTourContextModelSnapshot : ModelSnapshot
+    [Migration("20250904000841_ThemBangNguoiDung")]
+    partial class ThemBangNguoiDung
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

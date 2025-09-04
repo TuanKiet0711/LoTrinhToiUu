@@ -1,0 +1,93 @@
+﻿@model CityTourApp.Models.NguoiDung
+@{
+    ViewData["Title"] = "Đăng ký";
+}
+
+<style>
+    .auth-bg {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: url('/images/travel-bg.jpg') center/cover no-repeat;
+        transform: translateY(-10%);
+    }
+
+    .auth-card-lg {
+        width: 460px;
+        border-radius: 20px;
+        backdrop-filter: blur(12px);
+        background: rgba(255,255,255,0.9);
+    }
+
+    html, body {
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+    }
+</style>
+
+<div class="auth-bg">
+    <div class="card shadow-lg border-0 auth-card-lg">
+        <div class="card-body p-4">
+            <h2 class="text-center mb-4 text-success fw-bold">✈️ Đăng ký tài khoản</h2>
+
+            @if (ViewBag.DangKyLoi != null)
+            {
+                <div class="alert alert-danger text-center">@ViewBag.DangKyLoi</div>
+            }
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <form asp-action="DangKy" method="post" novalidate>
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label asp-for="HoTen" class="form-label fw-semibold"></label>
+                    <input asp-for="HoTen" class="form-control rounded-pill" placeholder="Nhập họ tên..." />
+                    <span asp-validation-for="HoTen" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="SoDienThoai" class="form-label fw-semibold"></label>
+                    <input asp-for="SoDienThoai" class="form-control rounded-pill"
+                           placeholder="Nhập số điện thoại 10 số..."
+                           maxlength="10" />
+                    <span asp-validation-for="SoDienThoai" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Email" class="form-label fw-semibold"></label>
+                    <input asp-for="Email" type="email" class="form-control rounded-pill" placeholder="Nhập email..." />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="MatKhau" class="form-label fw-semibold">Mật khẩu</label>
+                    <input asp-for="MatKhau" type="password" class="form-control rounded-pill" placeholder="Nhập mật khẩu..." />
+                    <span asp-validation-for="MatKhau" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Nhập lại mật khẩu</label>
+                    <input type="password" name="nhaplaiMatKhau" class="form-control rounded-pill" placeholder="Nhập lại mật khẩu..." />
+                    <span class="text-danger">
+                        @Html.ValidationMessage("NhapLaiMatKhau")
+                    </span>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-success rounded-pill fw-bold shadow">Đăng ký</button>
+                </div>
+            </form>
+
+            <p class="text-center mt-3">
+                Đã có tài khoản? <a asp-action="DangNhap" class="fw-bold text-decoration-none text-primary">Đăng nhập ngay</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
