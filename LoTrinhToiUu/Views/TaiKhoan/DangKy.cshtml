@@ -43,13 +43,13 @@
                 @Html.AntiForgeryToken()
 
                 <div class="mb-3">
-                    <label asp-for="HoTen" class="form-label fw-semibold"></label>
+                    <label asp-for="HoTen" class="form-label fw-semibold">Họ và tên</label>
                     <input asp-for="HoTen" class="form-control rounded-pill" placeholder="Nhập họ tên..." />
                     <span asp-validation-for="HoTen" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
-                    <label asp-for="SoDienThoai" class="form-label fw-semibold"></label>
+                    <label asp-for="SoDienThoai" class="form-label fw-semibold">Số điện thoại</label>
                     <input asp-for="SoDienThoai" class="form-control rounded-pill"
                            placeholder="Nhập số điện thoại 10 số..."
                            maxlength="10" />
