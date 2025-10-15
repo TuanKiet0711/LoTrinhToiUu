@@ -12,7 +12,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@title - LoTrinhToiUu</title>
+    <title>@title - Lộ Trình Tối Ưu</title>
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -27,10 +27,14 @@
             --bg1: #f0f9ff;
             --bg2: #ffffff;
             --ink: #0f172a;
-            --accent: #0ea5e9;
+            /* Ocean blue palette */
+            --ocean-700: #0369a1;
+            --ocean-600: #0284c7;
+            --ocean-500: #0ea5e9;
+            --ocean-400: #38bdf8;
+            --accent: var(--ocean-500);
             --headerH: 64px;
             --footerH: 64px;
-            /* Giữ không gian cho scrollbar -> tránh “nhảy” ngang */
             scrollbar-gutter: stable both-edges;
         }
 
@@ -40,45 +44,66 @@
 
         body {
             margin: 0;
-            font-family: "Poppins",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+            font-family: "Poppins", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
             color: var(--ink);
-            background: linear-gradient(180deg,var(--bg1) 0%, var(--bg2) 45%);
-            /* Sticky footer bằng flex column */
-            min-height: 100svh;
+            background: linear-gradient(180deg, var(--bg1) 0%, var(--bg2) 45%);
             display: flex;
             flex-direction: column;
-            /* KHÔNG cần padding-bottom vì footer không fixed */
-            /* padding-bottom: var(--footerH); */
+            min-height: 100svh;
         }
 
-        .navbar-glass {
-            backdrop-filter: blur(8px);
-            background: rgba(255,255,255,.75) !important;
-            box-shadow: 0 6px 24px rgba(2,6,23,.08);
+        /* HEADER */
+        .navbar-ocean {
+            background: linear-gradient(90deg, var(--ocean-600), var(--ocean-500)) !important;
+            box-shadow: 0 6px 24px rgba(2, 6, 23, .15);
         }
 
-        /* Vùng nội dung chiếm phần còn lại giữa header & footer */
-        /* Trường hợp full-bleed */
-        body > .full-bleed-wrapper {
-            flex: 1 0 auto;
-            display: flex;
-            width: 100%;
-        }
+            .navbar-ocean .navbar-brand,
+            .navbar-ocean .nav-link {
+                color: #fff !important;
+                font-weight: 500;
+            }
 
-        .full-bleed-main {
-            flex: 1 0 auto;
-            width: 100%;
-        }
+                .navbar-ocean .nav-link:hover,
+                .navbar-ocean .nav-link.active {
+                    text-decoration: underline;
+                    text-underline-offset: 4px;
+                }
 
-        /* Trường hợp container thông thường */
+        /* Nội dung chính */
+        body > .full-bleed-wrapper,
         body > .container.my-4 {
             flex: 1 0 auto;
             width: 100%;
         }
 
-        /* Footer ở cuối cột flex (không fixed) */
-        .footer {
+        /* FOOTER */
+        footer.footer {
+            background: linear-gradient(90deg, var(--ocean-600), var(--ocean-500));
+            color: white;
+            text-align: center;
+            padding: 1rem 0;
+            font-size: .95rem;
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, .08);
             margin-top: auto;
+        }
+
+            footer.footer a {
+                color: #fff;
+                text-decoration: underline;
+            }
+
+                footer.footer a:hover {
+                    color: var(--ocean-400);
+                }
+
+        /* Responsive nav toggle */
+        .navbar-toggler {
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .navbar-toggler-icon {
+            filter: invert(1);
         }
     </style>
 
@@ -86,9 +111,9 @@
 </head>
 <body>
     <header class="sticky-top">
-        <nav class="navbar navbar-expand-lg navbar-light navbar-glass" style="height:var(--headerH)">
+        <nav class="navbar navbar-expand-lg navbar-ocean" style="height:var(--headerH)">
             <div class="container">
-                <a class="navbar-brand fw-bold" asp-controller="Home" asp-action="Index">LoTrinhToiUu 🗺️</a>
+                <a class="navbar-brand fw-bold" asp-controller="Home" asp-action="Index">Lộ Trình Tối Ưu 🗺️</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNav"
                         aria-controls="topNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -102,19 +127,17 @@
 
                         @if (string.IsNullOrEmpty(userEmail))
                         {
-                            <!-- Nếu chưa đăng nhập -->
                             <li class="nav-item"><a class="nav-link" asp-controller="TaiKhoan" asp-action="DangNhap">Đăng nhập</a></li>
                             <li class="nav-item"><a class="nav-link" asp-controller="TaiKhoan" asp-action="DangKy">Đăng ký</a></li>
                         }
                         else
                         {
-                            <!-- Nếu đã đăng nhập -->
                             <li class="nav-item">
                                 <span class="nav-link">Xin chào, @userName</span>
                             </li>
                             <li class="nav-item">
                                 <form asp-controller="TaiKhoan" asp-action="DangXuat" method="post" class="d-inline">
-                                    <button type="submit" class="btn btn-link nav-link">Đăng xuất</button>
+                                    <button type="submit" class="btn btn-link nav-link text-white">Đăng xuất</button>
                                 </form>
                             </li>
                         }

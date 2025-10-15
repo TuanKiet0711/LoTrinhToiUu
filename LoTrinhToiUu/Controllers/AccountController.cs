@@ -1,14 +1,17 @@
 ﻿using CityTourApp.Models;
 using LoTrinhToiUu.Data;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Net.Mail;
 using System.Linq;
+using System;
+using System.Threading.Tasks;
 
 namespace CityTourApp.Controllers
 {
@@ -31,8 +34,11 @@ namespace CityTourApp.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> DangNhap(string email, string matkhau, string returnUrl = null)
         {
+            // Chuẩn hoá email để so khớp chính xác
+            var emailNorm = (email ?? string.Empty).Trim().ToLowerInvariant();
             var hashed = HashPassword(matkhau);
-            var nd = _context.NguoiDung.FirstOrDefault(u => u.Email == email && u.MatKhau == hashed);
+
+            var nd = _context.NguoiDung.FirstOrDefault(u => u.Email == emailNorm && u.MatKhau == hashed);
 
             if (nd != null)
             {
@@ -81,7 +87,13 @@ namespace CityTourApp.Controllers
         [AllowAnonymous]
         public IActionResult DangKy(NguoiDung model, string nhaplaiMatKhau)
         {
-            // Kiểm tra SĐT 10 số
+            // ====== Server-side validations (KHÔNG sửa model) ======
+
+            // 1) Họ tên
+            if (string.IsNullOrWhiteSpace(model.HoTen))
+                ModelState.AddModelError(nameof(model.HoTen), "Họ tên là bắt buộc.");
+
+            // 2) SĐT 10 số
             if (string.IsNullOrWhiteSpace(model.SoDienThoai) ||
                 model.SoDienThoai.Length != 10 ||
                 !model.SoDienThoai.All(char.IsDigit))
@@ -89,17 +101,21 @@ namespace CityTourApp.Controllers
                 ModelState.AddModelError(nameof(model.SoDienThoai), "Số điện thoại phải gồm đúng 10 chữ số.");
             }
 
-            // Kiểm tra nhập lại mật khẩu
-            if (string.IsNullOrEmpty(model.MatKhau) || string.IsNullOrEmpty(nhaplaiMatKhau) || model.MatKhau != nhaplaiMatKhau)
-            {
-                ModelState.AddModelError("NhapLaiMatKhau", "Mật khẩu nhập lại không khớp.");
-            }
+            // 3) Email: chuẩn hoá + kiểm tra định dạng
+            var emailNorm = (model.Email ?? string.Empty).Trim().ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(emailNorm) || !TryValidEmail(emailNorm))
+                ModelState.AddModelError(nameof(model.Email), "Email không đúng định dạng.");
+            model.Email = emailNorm; // lưu lowercase
 
-            // (khuyến nghị) kiểm tra trùng email
+            // 4) Mật khẩu & nhập lại
+            if (string.IsNullOrEmpty(model.MatKhau))
+                ModelState.AddModelError(nameof(model.MatKhau), "Mật khẩu là bắt buộc.");
+            if (string.IsNullOrEmpty(nhaplaiMatKhau) || model.MatKhau != nhaplaiMatKhau)
+                ModelState.AddModelError("NhapLaiMatKhau", "Mật khẩu nhập lại không khớp.");
+
+            // 5) Trùng email
             if (!string.IsNullOrEmpty(model.Email) && _context.NguoiDung.Any(u => u.Email == model.Email))
-            {
                 ModelState.AddModelError(nameof(model.Email), "Email đã tồn tại.");
-            }
 
             if (!ModelState.IsValid)
             {
@@ -107,8 +123,11 @@ namespace CityTourApp.Controllers
                 return View(model);
             }
 
-            // Lưu
-            model.MatKhau = HashPassword(model.MatKhau);
+            // ====== Lưu DB ======
+            model.HoTen = model.HoTen?.Trim();
+            model.SoDienThoai = model.SoDienThoai?.Trim();
+            model.MatKhau = HashPassword(model.MatKhau); // lưu HASH
+
             _context.NguoiDung.Add(model);
             _context.SaveChanges();
 
@@ -123,6 +142,13 @@ namespace CityTourApp.Controllers
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             HttpContext.Session.Clear();
             return RedirectToAction("Index", "Home");
+        }
+
+        // ====== Helpers ======
+        private static bool TryValidEmail(string email)
+        {
+            try { _ = new MailAddress(email); return true; }
+            catch { return false; }
         }
 
         private string HashPassword(string password)
