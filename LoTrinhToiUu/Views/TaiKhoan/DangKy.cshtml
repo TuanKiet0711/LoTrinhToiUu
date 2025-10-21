@@ -44,19 +44,22 @@
 
                 <div class="mb-3">
                     <label asp-for="HoTen" class="form-label fw-semibold">Họ và tên</label>
-                    <input asp-for="HoTen" class="form-control rounded-pill" placeholder="Nhập họ tên..." />
+                    <input asp-for="HoTen" class="form-control rounded-pill" placeholder="Nhập họ tên..." required />
                     <span asp-validation-for="HoTen" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
                     <label asp-for="SoDienThoai" class="form-label fw-semibold">Số điện thoại</label>
                     <input asp-for="SoDienThoai"
+                           id="SoDienThoai"
                            class="form-control rounded-pill"
                            placeholder="Nhập số điện thoại 10 số..."
                            maxlength="10"
                            inputmode="numeric"
-                           pattern="^\d{10}$" />
-                    <span class="form-text">Chỉ 10 chữ số (0-9).</span>
+                           pattern="^\d{10}$"
+                           autocomplete="tel"
+                           required />
+                    <span class="form-text">Chỉ nhập số (0–9), tối đa 10 ký tự.</span>
                     <span asp-validation-for="SoDienThoai" class="text-danger"></span>
                 </div>
 
@@ -65,25 +68,32 @@
                     <input asp-for="Email"
                            type="email"
                            class="form-control rounded-pill"
-                           placeholder="ví dụ: ten@domain.com" />
+                           placeholder="ví dụ: ten@domain.com"
+                           autocomplete="email"
+                           required />
                     <span asp-validation-for="Email" class="text-danger"></span>
                 </div>
 
-                <!-- Mật khẩu + Nhập lại mật khẩu cùng hàng -->
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label asp-for="MatKhau" class="form-label fw-semibold">Mật khẩu</label>
                         <input asp-for="MatKhau"
                                type="password"
                                class="form-control rounded-pill"
-                               placeholder="Nhập mật khẩu..." />
+                               placeholder="Nhập mật khẩu..."
+                               minlength="6"
+                               autocomplete="new-password"
+                               required />
                         <span asp-validation-for="MatKhau" class="text-danger"></span>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Nhập lại mật khẩu</label>
-                        <input type="password" name="nhaplaiMatKhau"
+                        <input type="password"
+                               name="nhaplaiMatKhau"
                                class="form-control rounded-pill"
-                               placeholder="Nhập lại mật khẩu..." />
+                               placeholder="Nhập lại mật khẩu..."
+                               minlength="6"
+                               required />
                         <span class="text-danger">@Html.ValidationMessage("NhapLaiMatKhau")</span>
                     </div>
                 </div>
@@ -104,9 +114,29 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        // Chặn ký tự không phải số ở SĐT (hỗ trợ UX)
-        const sdt = document.querySelector('input[name="SoDienThoai"]');
+        const sdt = document.getElementById('SoDienThoai');
         if (sdt) {
+            // Chặn ký tự không phải số khi gõ
+            sdt.addEventListener('keydown', e => {
+                const allowed = ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Home', 'End'];
+                if (allowed.includes(e.key)) return;
+                if ((e.ctrlKey || e.metaKey) && ['a','c','v','x'].includes(e.key.toLowerCase())) return;
+                if (/^[0-9]$/.test(e.key)) {
+                    if (sdt.value.length >= 10) e.preventDefault();
+                    return;
+                }
+                e.preventDefault();
+            });
+
+            // Khi dán: chỉ giữ số
+            sdt.addEventListener('paste', e => {
+                e.preventDefault();
+                const text = (e.clipboardData || window.clipboardData).getData('text');
+                const digits = text.replace(/\D/g, '').slice(0, 10);
+                document.execCommand('insertText', false, digits);
+            });
+
+            // Khi nhập: lọc lại để chắc chắn
             sdt.addEventListener('input', () => {
                 sdt.value = sdt.value.replace(/\D/g, '').slice(0, 10);
             });

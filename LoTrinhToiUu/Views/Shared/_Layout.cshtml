@@ -136,10 +136,16 @@
                                 <span class="nav-link">Xin chào, @userName</span>
                             </li>
                             <li class="nav-item">
-                                <form asp-controller="TaiKhoan" asp-action="DangXuat" method="post" class="d-inline">
-                                    <button type="submit" class="btn btn-link nav-link text-white">Đăng xuất</button>
+                                <a class="nav-link" href="#"
+                                   onclick="event.preventDefault(); document.getElementById('logoutForm').submit();">
+                                    Đăng xuất
+                                </a>
+                                <form id="logoutForm" asp-controller="TaiKhoan" asp-action="DangXuat"
+                                      method="post" style="display:none;">
+                                    @Html.AntiForgeryToken()
                                 </form>
                             </li>
+
                         }
                     </ul>
                 </div>
