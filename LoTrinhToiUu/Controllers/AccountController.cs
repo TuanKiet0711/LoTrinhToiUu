@@ -12,6 +12,7 @@ using System.Net.Mail;
 using System.Linq;
 using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace CityTourApp.Controllers
 {
@@ -20,7 +21,7 @@ namespace CityTourApp.Controllers
         private readonly CityTourContext _context;
         public TaiKhoanController(CityTourContext context) => _context = context;
 
-        // GET: /TaiKhoan/DangNhap
+        // =============== ĐĂNG NHẬP ===============
         [AllowAnonymous]
         public IActionResult DangNhap(string returnUrl = null)
         {
@@ -28,13 +29,11 @@ namespace CityTourApp.Controllers
             return View();
         }
 
-        // POST: /TaiKhoan/DangNhap
         [HttpPost]
         [ValidateAntiForgeryToken]
         [AllowAnonymous]
         public async Task<IActionResult> DangNhap(string email, string matkhau, string returnUrl = null)
         {
-            // Chuẩn hoá email để so khớp chính xác
             var emailNorm = (email ?? string.Empty).Trim().ToLowerInvariant();
             var hashed = HashPassword(matkhau);
 
@@ -42,11 +41,9 @@ namespace CityTourApp.Controllers
 
             if (nd != null)
             {
-                // (tuỳ chọn) lưu session để hiển thị tên ở view
                 HttpContext.Session.SetString("NguoiDungEmail", nd.Email);
                 HttpContext.Session.SetString("NguoiDungHoTen", nd.HoTen ?? "");
 
-                // 🔑 tạo cookie đăng nhập
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.NameIdentifier, nd.Email),
@@ -66,6 +63,8 @@ namespace CityTourApp.Controllers
                         ExpiresUtc = DateTimeOffset.UtcNow.AddHours(2)
                     });
 
+                TempData["ToastMessage"] = $"Xin chào {nd.HoTen ?? nd.Email}! Đăng nhập thành công 🎉";
+
                 if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                     return Redirect(returnUrl);
 
@@ -77,23 +76,20 @@ namespace CityTourApp.Controllers
             return View();
         }
 
-        // GET: /TaiKhoan/DangKy
+        // =============== ĐĂNG KÝ ===============
         [AllowAnonymous]
         public IActionResult DangKy() => View(new NguoiDung());
 
-        // POST: /TaiKhoan/DangKy
         [HttpPost]
         [ValidateAntiForgeryToken]
         [AllowAnonymous]
         public IActionResult DangKy(NguoiDung model, string nhaplaiMatKhau)
         {
-            // ====== Server-side validations (KHÔNG sửa model) ======
-
-            // 1) Họ tên
+            // ====== Kiểm tra họ tên ======
             if (string.IsNullOrWhiteSpace(model.HoTen))
                 ModelState.AddModelError(nameof(model.HoTen), "Họ tên là bắt buộc.");
 
-            // 2) SĐT 10 số
+            // ====== Kiểm tra số điện thoại ======
             if (string.IsNullOrWhiteSpace(model.SoDienThoai) ||
                 model.SoDienThoai.Length != 10 ||
                 !model.SoDienThoai.All(char.IsDigit))
@@ -101,50 +97,63 @@ namespace CityTourApp.Controllers
                 ModelState.AddModelError(nameof(model.SoDienThoai), "Số điện thoại phải gồm đúng 10 chữ số.");
             }
 
-            // 3) Email: chuẩn hoá + kiểm tra định dạng
+            // ====== Kiểm tra email ======
             var emailNorm = (model.Email ?? string.Empty).Trim().ToLowerInvariant();
-            if (string.IsNullOrWhiteSpace(emailNorm) || !TryValidEmail(emailNorm))
-                ModelState.AddModelError(nameof(model.Email), "Email không đúng định dạng.");
-            model.Email = emailNorm; // lưu lowercase
 
-            // 4) Mật khẩu & nhập lại
+            if (string.IsNullOrWhiteSpace(emailNorm) || !TryValidEmail(emailNorm))
+            {
+                ModelState.AddModelError(nameof(model.Email), "Email không đúng định dạng.");
+            }
+            else if (!emailNorm.EndsWith("@gmail.com"))
+            {
+                // ✅ Chỉ nhận Gmail
+                ModelState.AddModelError(nameof(model.Email), "Chỉ chấp nhận email có đuôi @gmail.com.");
+            }
+
+            model.Email = emailNorm;
+
+            // ====== Kiểm tra mật khẩu ======
             if (string.IsNullOrEmpty(model.MatKhau))
                 ModelState.AddModelError(nameof(model.MatKhau), "Mật khẩu là bắt buộc.");
+
             if (string.IsNullOrEmpty(nhaplaiMatKhau) || model.MatKhau != nhaplaiMatKhau)
                 ModelState.AddModelError("NhapLaiMatKhau", "Mật khẩu nhập lại không khớp.");
 
-            // 5) Trùng email
+            // ====== Kiểm tra email trùng ======
             if (!string.IsNullOrEmpty(model.Email) && _context.NguoiDung.Any(u => u.Email == model.Email))
                 ModelState.AddModelError(nameof(model.Email), "Email đã tồn tại.");
 
+            // ====== Nếu có lỗi thì trả về form ======
             if (!ModelState.IsValid)
             {
                 ViewBag.DangKyLoi = "Vui lòng kiểm tra lại các trường thông tin.";
                 return View(model);
             }
 
-            // ====== Lưu DB ======
+            // ====== Ghi vào DB ======
             model.HoTen = model.HoTen?.Trim();
             model.SoDienThoai = model.SoDienThoai?.Trim();
-            model.MatKhau = HashPassword(model.MatKhau); // lưu HASH
+            model.MatKhau = HashPassword(model.MatKhau);
 
             _context.NguoiDung.Add(model);
             _context.SaveChanges();
 
+            TempData["ToastMessage"] = "🎉 Đăng ký thành công! Bạn có thể đăng nhập ngay.";
             return RedirectToAction("DangNhap");
         }
 
-        // POST: /TaiKhoan/DangXuat
+        // =============== ĐĂNG XUẤT ===============
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DangXuat()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             HttpContext.Session.Clear();
+            TempData["ToastMessage"] = "👋 Đăng xuất thành công.";
             return RedirectToAction("Index", "Home");
         }
 
-        // ====== Helpers ======
+        // =============== HÀM PHỤ ===============
         private static bool TryValidEmail(string email)
         {
             try { _ = new MailAddress(email); return true; }

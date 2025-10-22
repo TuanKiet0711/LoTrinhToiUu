@@ -53,13 +53,13 @@
                     <input asp-for="SoDienThoai"
                            id="SoDienThoai"
                            class="form-control rounded-pill"
-                           placeholder="Nhập số điện thoại 10 số..."
+                           placeholder="Nhập số điện thoại..."
                            maxlength="10"
                            inputmode="numeric"
                            pattern="^\d{10}$"
                            autocomplete="tel"
                            required />
-                    <span class="form-text">Chỉ nhập số (0–9), tối đa 10 ký tự.</span>
+                    
                     <span asp-validation-for="SoDienThoai" class="text-danger"></span>
                 </div>
 
@@ -68,7 +68,7 @@
                     <input asp-for="Email"
                            type="email"
                            class="form-control rounded-pill"
-                           placeholder="ví dụ: ten@domain.com"
+                           placeholder="Nhập email..."
                            autocomplete="email"
                            required />
                     <span asp-validation-for="Email" class="text-danger"></span>

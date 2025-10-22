@@ -1,10 +1,13 @@
-﻿@{
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
     var title = ViewData["Title"] as string ?? "LoTrinhToiUu";
     var fullBleed = (ViewData["FullBleed"] as bool?) ?? false;
 
     // Lấy thông tin từ Session
-    var userEmail = Context.Session.GetString("NguoiDungEmail");
-    var userName = Context.Session.GetString("NguoiDungHoTen");
+    var userEmail = HttpContextAccessor.HttpContext?.Session.GetString("NguoiDungEmail");
+    var userName = HttpContextAccessor.HttpContext?.Session.GetString("NguoiDungHoTen");
 }
 
 <!DOCTYPE html>
@@ -27,7 +30,6 @@
             --bg1: #f0f9ff;
             --bg2: #ffffff;
             --ink: #0f172a;
-            /* Ocean blue palette */
             --ocean-700: #0369a1;
             --ocean-600: #0284c7;
             --ocean-500: #0ea5e9;
@@ -70,7 +72,6 @@
                     text-underline-offset: 4px;
                 }
 
-        /* Nội dung chính */
         body > .full-bleed-wrapper,
         body > .container.my-4 {
             flex: 1 0 auto;
@@ -97,13 +98,42 @@
                     color: var(--ocean-400);
                 }
 
-        /* Responsive nav toggle */
         .navbar-toggler {
             border-color: rgba(255, 255, 255, 0.5);
         }
 
         .navbar-toggler-icon {
             filter: invert(1);
+        }
+
+        /* Toast animation */
+        @@keyframes fadeIn {
+            from
+
+        {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        }
+
+        @@keyframes fadeOut {
+            from
+
+        {
+            opacity: 1;
+        }
+
+        to {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
         }
     </style>
 
@@ -145,7 +175,6 @@
                                     @Html.AntiForgeryToken()
                                 </form>
                             </li>
-
                         }
                     </ul>
                 </div>
@@ -169,12 +198,34 @@
             </main>
         </div>
     }
+    <!-- Toast thông báo -->
+    @if (TempData["ToastMessage"] != null)
+    {
+        <div id="toastSuccess"
+             class="toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3 show fade"
+             role="alert"
+             style="z-index:2000; min-width:260px; animation:fadeIn .5s;">
+            <div class="d-flex">
+                <div class="toast-body fw-semibold">@TempData["ToastMessage"]</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
 
-   
+        <script>
+            setTimeout(() => {
+                const t = document.getElementById("toastSuccess");
+                if (t) {
+                    t.style.animation = "fadeOut .6s forwards";
+                    setTimeout(() => t.remove(), 600);
+                }
+            }, 3000);
+        </script>
+    }
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
